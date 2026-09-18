@@ -1,0 +1,9 @@
+id,name_zh,name_en,category_key,dosage_form_zh,dosage_form_en,expiry_date,indications_zh,indications_en,storage_key,stock_count
+MED-001,布洛芬缓释胶囊,Ibuprofen Sustained-Release Capsules,analgesic,胶囊,Capsule,2027-06-30,发热 痛经 头痛 关节痛 牙痛,fever dysmenorrhea headache joint pain toothache,room_temp,24
+MED-002,阿莫西林胶囊,Amoxicillin Capsules,antibiotic,胶囊,Capsule,2026-10-10,细菌感染 咽炎 中耳炎 扁桃体炎,bacterial infection pharyngitis otitis media tonsillitis,room_temp,12
+MED-003,氯雷他定片,Loratadine Tablets,antiallergic,片剂,Tablet,2027-12-15,过敏性鼻炎 荨麻疹 皮肤过敏 瘙痒,allergic rhinitis urticaria skin allergy itching,room_temp,10
+MED-004,蒙脱石散,Montmorillonite Powder,gastrointestinal,冲剂,Powder,2026-05-01,急慢性腹泻 拉肚子 水样便,acute and chronic diarrhea loose stools watery stools,room_temp,8
+MED-005,复方氨酚烷胺片,Compound Paracetamol Tablets,cold,片剂,Tablet,2026-09-30,普通感冒 流感 鼻塞 流涕 喷嚏,common cold influenza nasal congestion runny nose sneezing,room_temp,12
+MED-006,莫匹罗星软膏,Mupirocin Ointment,external,软膏,Ointment,2027-04-18,毛囊炎 皮肤感染 湿疹继发感染,folliculitis skin infection infected eczema,room_temp,1
+MED-007,重组人胰岛素注射液,Recombinant Human Insulin,chronic,注射液,Injection,2026-10-05,糖尿病 血糖控制,diabetes blood sugar regulation,refrigerate,2
+MED-008,人工泪液滴眼液,Artificial Tears Eye Drops,ophthalmic,滴眼剂,Eye Drops,2026-04-15,眼睛干涩 视疲劳 异物感,dry eyes eye strain foreign body sensation,room_temp,1
