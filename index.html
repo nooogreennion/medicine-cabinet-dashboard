@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Medicine Cabinet / 家庭药箱健康与效期看板</title>
+  <!-- Tailwind CSS & Chart.js CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+  <!-- 导航栏 -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center text-white text-xl shadow-md shadow-teal-100">
+          <i class="fa-solid fa-pills"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900" id="navTitle">家庭药箱健康看板</h1>
+          <p class="text-xs text-slate-500" id="navSubtitle">药品效期监控与数据分析</p>
+        </div>
+      </div>
+      <!-- 语言切换与添加按钮 -->
+      <div class="flex items-center space-x-3">
+        <div class="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1">
+          <button id="btnZh" class="px-3 py-1 text-xs font-semibold rounded-md bg-white text-teal-700 shadow-sm">中文</button>
+          <button id="btnEn" class="px-3 py-1 text-xs font-semibold rounded-md text-slate-600 hover:text-slate-900">EN</button>
+        </div>
+        <button id="openAddModal" class="bg-teal-600 hover:bg-teal-700 text-white px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center space-x-1.5 transition-colors">
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span id="btnAddMed">添加药品</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <!-- 指标统计卡片 -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div class="text-xs text-slate-500 font-medium" id="kpiTotalLabel">总备药品种</div>
+        <div class="text-2xl font-bold text-slate-900 mt-1" id="kpiTotal">0</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-amber-200 bg-amber-50/40 shadow-sm">
+        <div class="text-xs text-amber-700 font-medium" id="kpiExpiringLabel">30天内临期</div>
+        <div class="text-2xl font-bold text-amber-600 mt-1" id="kpiExpiring">0</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-rose-200 bg-rose-50/40 shadow-sm">
+        <div class="text-xs text-rose-700 font-medium" id="kpiExpiredLabel">已过期药品</div>
+        <div class="text-2xl font-bold text-rose-600 mt-1" id="kpiExpired">0</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 shadow-sm">
+        <div class="text-xs text-emerald-700 font-medium" id="kpiHealthyLabel">安全库存率</div>
+        <div class="text-2xl font-bold text-emerald-600 mt-1" id="kpiHealthy">0%</div>
+      </div>
+    </div>
+
+    <!-- 检索工具栏 -->
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+      <div class="relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input id="searchInput" type="text" class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="按药名或症状搜索（如：发热、头痛、cough、allergy）..." />
+      </div>
+    </div>
+
+    <!-- 数据可视化分析 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <h3 class="text-sm font-bold text-slate-800 mb-3" id="chartExpiryTitle">效期时间分布</h3>
+        <div class="h-64">
+          <canvas id="expiryChart"></canvas>
+        </div>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <h3 class="text-sm font-bold text-slate-800 mb-3" id="chartCatTitle">药物分类占比</h3>
+        <div class="h-64 flex items-center justify-center">
+          <canvas id="catChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- 药品列表 -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-bold text-slate-800 text-sm" id="tableTitle">药箱药品明细</h3>
+        <button id="resetDemoBtn" class="text-xs text-slate-400 hover:text-teal-600 transition-colors">重置默认数据</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase tracking-wider">
+              <th class="py-3 px-4" id="thName">药品名称</th>
+              <th class="py-3 px-4" id="thCategory">类别</th>
+              <th class="py-3 px-4" id="thExpiry">有效期截止</th>
+              <th class="py-3 px-4" id="thDays">剩余天数</th>
+              <th class="py-3 px-4" id="thStatus">状态</th>
+              <th class="py-3 px-4 text-right" id="thAction">操作</th>
+            </tr>
+          </thead>
+          <tbody id="medTableBody" class="divide-y divide-slate-100 font-normal">
+            <!-- 动态渲染 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // 基础示例数据
+    const DEFAULT_DATA = [
+      { id: "MED-001", name_zh: "布洛芬缓释胶囊", name_en: "Ibuprofen Sustained-Release Capsules", category_key: "analgesic", expiry_date: "2027-06-30", indications_zh: "发热 痛经 头痛 关节痛", indications_en: "fever headache pain" },
+      { id: "MED-002", name_zh: "阿莫西林胶囊", name_en: "Amoxicillin Capsules", category_key: "antibiotic", expiry_date: "2025-05-10", indications_zh: "细菌感染 扁桃体炎 咽炎", indications_en: "infection pharyngitis" },
+      { id: "MED-003", name_zh: "氯雷他定片", name_en: "Loratadine Tablets", category_key: "antiallergic", expiry_date: "2027-11-20", indications_zh: "过敏性鼻炎 荨麻疹 瘙痒", indications_en: "allergy rhinitis itching" },
+      { id: "MED-004", name_zh: "蒙脱石散", name_en: "Montmorillonite Powder", category_key: "gastrointestinal", expiry_date: "2026-04-01", indications_zh: "腹泻 拉肚子 急性肠炎", indications_en: "diarrhea loose stools" }
+    ];
+
+    const I18N = {
+      zh: {
+        categories: { analgesic: "解热镇痛", antibiotic: "抗生素", antiallergic: "抗过敏", gastrointestinal: "肠胃消化", other: "其他" },
+        status: { healthy: "正常", expiring: "临期", expired: "已过期" }
+      },
+      en: {
+        categories: { analgesic: "Analgesic", antibiotic: "Antibiotic", antiallergic: "Antiallergic", gastrointestinal: "Gastrointestinal", other: "Other" },
+        status: { healthy: "Healthy", expiring: "Expiring Soon", expired: "Expired" }
+      }
+    };
+
+    let currentLang = localStorage.getItem('med_lang') || 'zh';
+    let medicines = JSON.parse(localStorage.getItem('med_data')) || DEFAULT_DATA;
+    let expiryChartInstance = null;
+    let catChartInstance = null;
+
+    function getDaysRemaining(dateStr) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const expiry = new Date(dateStr);
+      return Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+    }
+
+    function render() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const tbody = document.getElementById('medTableBody');
+      tbody.innerHTML = '';
+
+      let total = medicines.length;
+      let expiredCount = 0;
+      let expiringCount = 0;
+
+      const filtered = medicines.filter(m => {
+        const name = (currentLang === 'zh' ? m.name_zh : m.name_en).toLowerCase();
+        const ind = (currentLang === 'zh' ? m.indications_zh : m.indications_en).toLowerCase();
+        return name.includes(search) || ind.includes(search);
+      });
+
+      filtered.forEach(m => {
+        const days = getDaysRemaining(m.expiry_date);
+        let statusKey = 'healthy';
+        let badgeClass = 'bg-emerald-100 text-emerald-800';
+
+        if (days < 0) {
+          statusKey = 'expired';
+          badgeClass = 'bg-rose-100 text-rose-800';
+          expiredCount++;
+        } else if (days <= 30) {
+          statusKey = 'expiring';
+          badgeClass = 'bg-amber-100 text-amber-800';
+          expiringCount++;
+        }
+
+        const catName = I18N[currentLang].categories[m.category_key] || I18N[currentLang].categories.other;
+        const statusText = I18N[currentLang].status[statusKey];
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition-colors';
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-medium text-slate-900">${currentLang === 'zh' ? m.name_zh : m.name_en}</td>
+          <td class="py-3 px-4 text-slate-600">${catName}</td>
+          <td class="py-3 px-4 text-slate-600 font-mono text-xs">${m.expiry_date}</td>
+          <td class="py-3 px-4 font-mono font-medium ${days < 0 ? 'text-rose-600' : (days <= 30 ? 'text-amber-600' : 'text-slate-700')}">${days} d</td>
+          <td class="py-3 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${badgeClass}">${statusText}</span></td>
+          <td class="py-3 px-4 text-right"><button onclick="deleteMed('${m.id}')" class="text-rose-500 hover:text-rose-700 text-xs"><i class="fa-regular fa-trash-can"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // 更新 KPI
+      document.getElementById('kpiTotal').innerText = total;
+      document.getElementById('kpiExpired').innerText = expiredCount;
+      document.getElementById('kpiExpiring').innerText = expiringCount;
+      const healthyRate = total === 0 ? 100 : Math.round(((total - expiredCount) / total) * 100);
+      document.getElementById('kpiHealthy').innerText = healthyRate + '%';
+
+      renderCharts();
+    }
+
+    function renderCharts() {
+      if (expiryChartInstance) expiryChartInstance.destroy();
+      if (catChartInstance) catChartInstance.destroy();
+
+      // 效期图表
+      const ctxExp = document.getElementById('expiryChart').getContext('2d');
+      let expCount = 0, soonCount = 0, safeCount = 0;
+      medicines.forEach(m => {
+        const d = getDaysRemaining(m.expiry_date);
+        if (d < 0) expCount++;
+        else if (d <= 30) soonCount++;
+        else safeCount++;
+      });
+
+      expiryChartInstance = new Chart(ctxExp, {
+        type: 'bar',
+        data: {
+          labels: currentLang === 'zh' ? ['已过期', '30天内临期', '充足安全'] : ['Expired', 'Expiring <30d', 'Healthy'],
+          datasets: [{
+            data: [expCount, soonCount, safeCount],
+            backgroundColor: ['#f43f5e', '#f59e0b', '#10b981']
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+
+      // 类别图表
+      const ctxCat = document.getElementById('catChart').getContext('2d');
+      const catCounts = {};
+      medicines.forEach(m => {
+        const c = m.category_key || 'other';
+        catCounts[c] = (catCounts[c] || 0) + 1;
+      });
+
+      const catLabels = Object.keys(catCounts).map(k => I18N[currentLang].categories[k] || k);
+      catChartInstance = new Chart(ctxCat, {
+        type: 'doughnut',
+        data: {
+          labels: catLabels,
+          datasets: [{
+            data: Object.values(catCounts),
+            backgroundColor: ['#0d9488', '#3b82f6', '#8b5cf6', '#f59e0b', '#64748b']
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    function deleteMed(id) {
+      medicines = medicines.filter(m => m.id !== id);
+      localStorage.setItem('med_data', JSON.stringify(medicines));
+      render();
+    }
+
+    document.getElementById('searchInput').addEventListener('input', render);
+    document.getElementById('btnZh').addEventListener('click', () => { currentLang = 'zh'; localStorage.setItem('med_lang', 'zh'); render(); });
+    document.getElementById('btnEn').addEventListener('click', () => { currentLang = 'en'; localStorage.setItem('med_lang', 'en'); render(); });
+    document.getElementById('resetDemoBtn').addEventListener('click', () => {
+      medicines = DEFAULT_DATA;
+      localStorage.setItem('med_data', JSON.stringify(medicines));
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
